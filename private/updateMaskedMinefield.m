@@ -1,24 +1,29 @@
 %Updates the masked minefield with the latest masking
 function updateMaskedMinefield()
-    global minefield minefieldDim
+    global minefield minefieldDim solvedArray grain    
     
-    %Could be optimized to only update masked values that have changed
-    %(4th page)?
-    
-    for row = 1:minefieldDim(1)
-        for col = 1:minefieldDim(2)
+    for m = 1:minefieldDim(1)
+        n = 1;
+        while n <= minefieldDim(2)
+            if(mod(n-1, grain) == 0 && solvedArray(ceil(m/grain),ceil(n/grain)))%dnc optimization
+                n = n+grain;%skip to next block
+                continue;
+            end
+            
             %If masked, display unknown "-1"
-            if(minefield(row, col, 3) && minefield(row, col, 2) ~= 99)
-                minefield(row, col, 2) = -1;
-            elseif (minefield(row, col, 2) ~= 99)
+            if(minefield(m, n, 3) && minefield(m, n, 2) ~= 99)
+                minefield(m, n, 2) = -1;
+            elseif (minefield(m, n, 2) ~= 99)
                 %Transfer value from complete minefield
-                if(minefield(row, col, 2) ~= minefield(row, col, 1))
-                    minefield(row, col, 2) = minefield(row, col, 1);
-                    dispCell(row, col); 
+                if(minefield(m, n, 2) ~= minefield(m, n, 1))
+                    minefield(m, n, 2) = minefield(m, n, 1);
+                    dispCell(m, n);
                 end  
             else
-                dispCell(row, col);%display flags
+                dispCell(m, n);%display flags
             end
+            
+            n = n+1;
         end
     end
 end

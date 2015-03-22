@@ -4,7 +4,7 @@ function mineSolver
     
     addpath('lib/', 'img/');
     
-    global minefieldDim mineNum
+    global minefield minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
     
     %Set minefield dimensions
@@ -12,8 +12,9 @@ function mineSolver
     minefieldDim(2) = 7;
     mineNum = 18;
     
-    initializeFigureWindow();
-        
+    initializeFigureWindow(0.2);
+    dncInit();
+    
     %generate the minefield into global variable "minefield"
     generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
     
@@ -33,8 +34,21 @@ function mineSolver
     guess();
 end
 
+%initialize divide and conquor data structures
+function dncInit()
+    global minefieldDim solvedArray grain;
+    
+    grain = 3;
+    saM = ceil(minefieldDim(1)/grain);
+    saN = ceil(minefieldDim(2)/grain);
+    
+    %solvedArray is the solved array which represents each 8*8 block as a flag
+    %denoting whether the block is solved or not.
+    solvedArray = zeros(saM, saN);
+end
+
 %Initialize the figure window with given size, offset and title
-function initializeFigureWindow()
+function initializeFigureWindow(multiplier)
     %Creates a figure window with defined properties
     global minefieldDim sprites
     
@@ -55,7 +69,7 @@ function initializeFigureWindow()
     %Get the screensize and figure size
     screenSize = get(0, 'ScreenSize');
     %44x44 for full size
-    figureSize = [minefieldDim(2) * 44, minefieldDim(1) * 44];
+    figureSize = [minefieldDim(2) * multiplier*44, minefieldDim(1) * multiplier*44];
     
     %Get the centered offset for the figure window
     xpos = (screenSize(3)-figureSize(1))/2;
@@ -78,6 +92,7 @@ function solveMinefield()
     global equationMatrix equationMatrixDim equationMatrixPos
     global solvedEqMatrix solvedEqMatrixDim
     global bombs equations
+    global solvedArray
 
     %Create the solved equation matrix
     solvedEqMatrix = zeros(equationMatrixDim(2),equationMatrixDim(2));
@@ -93,7 +108,8 @@ function solveMinefield()
     
     %Run a first pass of the minefield with the basic expansion algorithm
     clearPass();
-        
+    dispMinefield();
+	
     while (equations > 0 || lastPassBombs ~= bombs)
         %Reset solved checks
         lastPassBombs = bombs;
@@ -159,6 +175,7 @@ function solveMinefield()
         %Display masked minefield
         %disp(minefield(:,:,2));
         drawnow;
+        dncRecheckMinefield();
         fprintf('bombs found: %d\n', bombs);
     end
     
@@ -171,16 +188,27 @@ function counter = clearPass()
 
     isUpdated = true;
     counter = 0;
-
+    
+    drawnow;
     while(isUpdated)
-        drawnow;
+        if(mod(counter,2) ~= 0)
+            drawnow;
+        end
+        dncRecheckMinefield(); %refresh dnc array
+        
         temp = minefield(:,:,2);
-
+        
         for m = 1:minefieldDim(1)
-            for n = 1:minefieldDim(2)
+            n = 1;
+            while n <= minefieldDim(2)
+                if(mod(n-1, grain) == 0 && solvedArray(ceil(m/grain),ceil(n/grain)))%dnc optimization
+                    n = n+grain;%skip to next block
+                    continue;
+                end
                 if(minefield(m,n,2) ~= -1 && minefield(m,n,2) ~= 99)
                     simpleSolve(m,n);
                 end
+                n = n+1;
             end
         end
 
@@ -192,6 +220,7 @@ function counter = clearPass()
             counter = counter + 1;
         end
     end
+    drawnow;
 end
 
 %Deals with the cases where a cell's unknowns are ALL mines or ALL safe
@@ -211,7 +240,7 @@ function simpleSolve(row, col)
     %Count the number of unknowns and mines around the cell
     for m = (row-1):(row+1)
         for n = (col-1):(col+1)
-            if(m > 0 && n > 0 && m <= minefieldDim(1) && n <= minefieldDim(2)) 
+            if(m > 0 && n > 0 && m <= minefieldDim(1) && n <= minefieldDim(2))
                 if(minefield(m,n,2) == -1)
                     unknowns = unknowns + 1;
                 elseif(minefield(m,n,2) == 99)
