@@ -1,7 +1,7 @@
 %Randomly generates then solves a minesweeper field
-
 function mineSolver
     clear; clc; close all;
+    
     addpath('lib/', 'img/');
     
     global minefieldDim mineNum
@@ -66,14 +66,14 @@ function initializeFigureWindow()
            'Toolbar', 'none', ...
            'Menubar', 'none');
        
-    hold on;
+    hold('on');
     axis([0, minefieldDim(2)*35, 0, minefieldDim(1)*35]);
     axis('off');
 end
 
 % Contains main solving loop.
 function solveMinefield()
-    global minefield minefieldDim mineNum
+    global minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
     global solvedEqMatrix solvedEqMatrixDim
     global bombs equations
@@ -88,11 +88,10 @@ function solveMinefield()
     lastPassBombs = -1;
     bombs = 0;
     
+    dispMinefield();
+    
     %Run a first pass of the minefield with the basic expansion algorithm
-    dispMinefield();
     clearPass();
-    disp(minefield(:,:,2));
-    dispMinefield();
         
     while (equations > 0 || lastPassBombs ~= bombs)
         %Reset solved checks
@@ -392,7 +391,7 @@ function getEquationBuilder(row, col)
                 %Check bounds
                 if(m <= minefieldDim(1) && n <= minefieldDim(2) && m > 0 && n > 0 && ~(m == row && n == col))
                     %Does cell have an unknown or mine around it?
-                    if(minefield(m,n,2) == -1 || minefield(m,n,2) == 99)
+                    if(minefield(m,n,2) == -1)
                         %If yes, add equation to equationMatrix and exit function
                         buildEquation(row,col);
                         return;
@@ -480,3 +479,79 @@ function allMatchMethod(i, solverMatrix, sizeS)
         end
     end
 end
+
+function guess()
+    %Guesses the cell with the lowest probability of being a mine
+    global minefield minefieldDim
+    global probMatrix
+    
+    %Create a probability matrix
+    probMatrix = zeros(minefieldDim(1), minefieldDim(2));
+    
+    %Fill the probability matrix
+    for i = 1:minefieldDim(1)
+        for j = 1:minefieldDim(2)
+            if minefield(i,j,2) ~= -1 && minefield(i,j,2) ~= 99
+                probability = calcProbability(i,j);
+                if probability ~= 0
+                    addProbability(i,j,probability)
+                end
+            end
+        end
+    end
+    
+    %Pick a cell to guess
+    low = min(min(probMatrix(probMatrix ~= 0)));
+    
+    for i = 1:minefieldDim(1)
+        for j = 1:minefieldDim(2)
+            
+        end
+    end
+    
+    %Unmask the guess
+    
+    %Check if the guess is a mine (return if true)
+end
+
+function addProbability(row, col, probability)
+    %Appends a probability around a cell
+    global probMatrix
+    
+    for m=(row-1):(row+1)
+        for n=(col-1):(col+1)
+            if probability > probMatrix(m,n)
+                probMatrix(m,n) = probability;
+            end
+        end
+    end
+end
+
+function probability = calcProbability(row, col)
+    %Calculates the probability of there being a mine around a cell
+    global minefield
+    
+    probability = 0;
+    mineCounter = 0;
+    unknownCounter = 0;
+    
+    for m=(row-1):(row+1)
+        for n=(col-1):(col+1)
+            if m <= minefieldDim(1) && n <= minefieldDim(2) && m > 0 && n > 0
+                if minefield(m,n,2) == 99
+                    mineCounter = mineCounter+1;
+                elseif minefield(m,n,2) == -1
+                    unknownCounter = unknownCounter+1;
+                end
+            end
+        end
+    end
+    
+    if unknownCounter == 0
+        return;
+    else
+        probability = (minefield(row,col,2) - mineCounter)/unknownCounter;
+    end
+end
+
+
