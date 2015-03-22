@@ -1,26 +1,26 @@
 %Randomly generates then solves a minesweeper field
-
 function mineSolver
     clear; clc; close all;
+    
     addpath('lib/', 'img/');
     
     global minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
     
     %Set minefield dimensions
-    minefieldDim(1) = 16;
-    minefieldDim(2) = 30;
-    mineNum = 99;
+    minefieldDim(1) = 7;
+    minefieldDim(2) = 7;
+    mineNum = 18;
     
     initializeFigureWindow();
         
     %generate the minefield into global variable "minefield"
     generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
     
-    %save('field.mat');
+    save('field.mat');
     %load('field.mat');
     
-    % Get nu
+    % Get total number of cells
     cellNum = minefieldDim(1)*minefieldDim(2);
     
     %Create global matrix to store calculations
@@ -30,8 +30,10 @@ function mineSolver
     equationMatrixPos = 1;
     
     solveMinefield();
+    guess();
 end
 
+%Initialize the figure window with given size, offset and title
 function initializeFigureWindow()
     %Creates a figure window with defined properties
     global minefieldDim sprites
@@ -44,31 +46,38 @@ function initializeFigureWindow()
     sprites{5} = imread('FiveCell.png');
     sprites{6} = imread('SixCell.png');
     sprites{7} = imread('SevenCell.png');
-    sprites{8} = imread('UnknownCell.png');
-    sprites{9} = imread('UnknownCell.png');
+    sprites{8} = imread('EightCell.png');
+    sprites{9} = imread('MineCell.png');
     sprites{10} = imread('UnknownCell.png');
     sprites{11} = imread('ZeroCell.png');
     sprites{12} = imread('FlagCell.png');
     
-    %44x44
-    figure('Position', [150, 200, (minefieldDim(2)) * 18, minefieldDim(1) * 18], ...
+    %Get the screensize and figure size
+    screenSize = get(0, 'ScreenSize');
+    %44x44 for full size
+    figureSize = [minefieldDim(2) * 44, minefieldDim(1) * 44];
+    
+    %Get the centered offset for the figure window
+    xpos = (screenSize(3)-figureSize(1))/2;
+    ypos = (screenSize(4)-figureSize(2))/2;
+    
+    figure('Position', [xpos, ypos, figureSize(1), figureSize(2)], ...  %Center and size the figure window
+           'Name', 'MineSolver', 'NumberTitle', 'off', ...              %Set figure title
            'Resize', 'off', ...
-           'Toolbar', 'none');
+           'Toolbar', 'none', ...
+           'Menubar', 'none');
        
-    hold on;
+    hold('on');
     axis([0, minefieldDim(2)*35, 0, minefieldDim(1)*35]);
     axis('off');
 end
 
-
 % Contains main solving loop.
 function solveMinefield()
-    global minefield minefieldDim mineNum
+    global minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
     global solvedEqMatrix solvedEqMatrixDim
     global bombs equations
-
-    %id2Coord(coord2Id(1, 15))
 
     %Create the solved equation matrix
     solvedEqMatrix = zeros(equationMatrixDim(2),equationMatrixDim(2));
@@ -80,12 +89,10 @@ function solveMinefield()
     lastPassBombs = -1;
     bombs = 0;
     
+    dispMinefield();
+    
     %Run a first pass of the minefield with the basic expansion algorithm
-    disp(minefield(:,:,2));
-    dispMinefield();
     clearPass();
-    disp(minefield(:,:,2));
-    dispMinefield();
         
     while (equations > 0 || lastPassBombs ~= bombs)
         %Reset solved checks
@@ -140,12 +147,12 @@ function solveMinefield()
         end
         
         %Display masked minefield
-        disp(minefield(:,:,2));
+        %disp(minefield(:,:,2));
         drawnow;
         fprintf('bombs found: %d\n', bombs);
     end
     
-    fprintf('\n Deterministic solving complete!\n');
+    fprintf('\nDeterministic solving complete!\n\n');
 end
 
 %Check to see if any squares can be solved outright
@@ -223,29 +230,67 @@ end
 
 %Builds then solves the solver matrix
 function solveEquations()
-    global minefield minefieldDim
+    global mineNum
     global solvedEqMatrix
     global equationMatrix
     global bombs equations
+    global lastBombs
 
     %Concatonate the solved and equation matrices vertically to set up
     %the row reduction
     solverMatrix = vertcat(solvedEqMatrix, equationMatrix);
-
-    dispEquations(solverMatrix, size(solverMatrix));
+    sizeS = size(solverMatrix);
+    
+    %displayEquations(solverMatrix, size(solverMatrix));
 
     %Row reduce the matrix (i.e solve it)
-    %Tolerance is set to 0.4 and is of type sparse ('s') to speed up
-    %calculations
-
     solverMatrix = frref(solverMatrix);
 
-    dispEquations(solverMatrix, size(solverMatrix));
-
-    sizeS = size(solverMatrix);
-    solvedSquares = zeros(minefieldDim(1)*minefieldDim(2));
-
+    %displayEquations(solverMatrix, size(solverMatrix));
+    
     %Parse equation Matrix for solved rows
+    parseEquations(solverMatrix, sizeS);
+    
+    iteration = 0;
+    
+    while equations == 0 && bombs == lastBombs && iteration < 10 && bombs ~= mineNum
+        equations = 0;
+        bombs = 0;
+        iteration = iteration + 1;
+        
+        %Permute the solvermatrix
+        permVector = [randperm(sizeS(2)-1), sizeS(2)];
+        
+        %Create and store the permuted matrix
+        permMatrix = zeros(sizeS(1),sizeS(2));
+
+        for j = 1:sizeS(2)
+            permMatrix(:,j) = solverMatrix(:,permVector(j));
+        end
+        
+        %rref the matrix
+        permMatrix = frref(permMatrix);
+        
+        %Convert back to regular id order in solverMatrix
+        for j = 1:sizeS(2)
+            solverMatrix(:,permVector(j)) = permMatrix(:,j);
+        end
+        
+        %Parse the solverMatrix
+        parseEquations(solverMatrix, sizeS);
+    end
+    
+    lastBombs = bombs;
+end
+
+%Parse the solverMatrix for solved rows
+function parseEquations(solverMatrix, sizeS)
+    %Parse equation Matrix for solved rows
+    global minefield minefieldDim
+    global equations
+    
+    solvedSquares = zeros(minefieldDim(1)*minefieldDim(2));
+    
     for i = 1:sizeS(1)
 
         %special case when all variables don't have mines, we are
@@ -297,20 +342,11 @@ function solveEquations()
 
             continue; %skips the other cases below
         end
-
-        %special case when all variables don't have mines, we are
-        %looking for equations of the form 1...-1...|1 or 1...-1...|-1
-        %where only one 1 or -1 is present
-
-        if(oneMatchMethod(i, solverMatrix, sizeS, 1) || oneMatchMethod(i, solverMatrix, sizeS, -1))
-            bombs = bombs + 1;
-            continue; %Skips the other cases
-        end
         
         %special case when terminator isn't 0, we are
         %looking for equations of the form 1...1...|2 or -1...-1...-1|-3 etc.
         
-        if(abs(solverMatrix(i, sizeS(2))) > 1)
+        if(abs(solverMatrix(i, sizeS(2))) ~= 0)
             allMatchMethod(i, solverMatrix, sizeS);
         end
     end
@@ -356,7 +392,7 @@ function getEquationBuilder(row, col)
                 %Check bounds
                 if(m <= minefieldDim(1) && n <= minefieldDim(2) && m > 0 && n > 0 && ~(m == row && n == col))
                     %Does cell have an unknown or mine around it?
-                    if(minefield(m,n,2) == -1 || minefield(m,n,2) == 99)
+                    if(minefield(m,n,2) == -1)
                         %If yes, add equation to equationMatrix and exit function
                         buildEquation(row,col);
                         return;
@@ -387,41 +423,7 @@ function buildEquation(row, col)
     equationMatrixPos = equationMatrixPos+1;
 end
 
-%Checks and solves equations of form 1...-1...|1 or 1...-1...|-1
-function onematch = oneMatchMethod(i, solverMatrix, sizeS, match) 
-    global solvedSquares
-    
-    onematch = false;
-    
-    if(solverMatrix(i, sizeS(2)) == match)
-        %check for only one match to the solution
-        for j = 1:sizeS(2)-1
-            if (solverMatrix(i, j) == match && onematch == false)
-                onematch = true;
-            elseif (solverMatrix(i, j) == match && onematch == true)
-                onematch = false;
-                break;
-            end
-        end
-        
-        if(onematch)
-            for j = 1:sizeS(2)-1
-                %The coordinate equal to the match is a mine
-                if (solverMatrix(i, j) == match)
-                    coord = id2Coord(j);
-                    buildSolvedEquation(coord(1), coord(2));
-                    %fprintf('(%d, %d): match case: is mine\n', coord(1), coord(2));
-                %All other non-zero values are not mines     
-                elseif (solverMatrix(i, j) ~= 0)
-                    solvedSquares(j) = 1;
-                    %coord = id2Coord(j);
-                    %fprintf('(%d, %d): match case: is empty\n', coord(1), coord(2));
-                end
-            end
-        end
-    end
-end
-
+%Solves minefield with added equation where all unknowns = mines left
 function mineCountingMethod(bombsLeft)
     global minefield minefieldDim mineNum
     global equationMatrix equationMatrixPos equationMatrixDim
@@ -443,7 +445,8 @@ end
 
 %Checks and solves equations of the form 1...1...|2 or 1...1...1|3 etc.
 function allMatchMethod(i, solverMatrix, sizeS)
-    global bombs;
+    global minefield
+    global equations bombs
     
     total = solverMatrix(i,sizeS(2));
     counter = 0;
@@ -454,38 +457,147 @@ function allMatchMethod(i, solverMatrix, sizeS)
     else
         match = -1;
     end
-        
+    
+    %Loop through the solverMatrix
     for j = 1:sizeS(2)-1
         if (solverMatrix(i, j) == match)
             counter = counter+1;
-        elseif (solverMatrix(i, j) ~= match && solverMatrix(i, j) ~= 0)
-            counter = 0;
-            break;
         end
     end
     
+    %Unmask/Mark cells
     if(counter == total)
         for j = 1:sizeS(2)-1
-            if(solverMatrix(i, j) == match)
+            if solverMatrix(i, j) == match
                 coord = id2Coord(j);
                 buildSolvedEquation(coord(1),coord(2));
                 bombs = bombs+1;
+            elseif solverMatrix(i, j) ~= 0
+                coord = id2Coord(j);
+                equations = equations + 1;
+                minefield(coord(1),coord(2),3) = 0; %Unmask the cell
             end
         end
     end
 end
 
+function guess()
+    %Guesses the cell with the lowest probability of being a mine
+    global minefield minefieldDim mineNum
+    global bombs probVector
+    
+    fprintf('Initiating probability calculations...\n');
+    
+    %Create a probability matrix
+    probVector = zeros(1, minefieldDim(1)*minefieldDim(2));
+    
+    %Fill the probability matrix for unknown cells touching hints
+    for pos = 1:length(probVector)
+        coord = id2Coord(pos);
+        if minefield(coord(1),coord(2),2) ~= -1 && minefield(coord(1),coord(2),2) ~= 99
+            probability = calcProbability(coord(1),coord(2));
+            if probability ~= 0
+                addProbability(coord(1),coord(2),probability)
+            end
+        end
+    end
+    
+    void
+    %Fill the probability matrix for cells not touching hints
+    for pos = 1:length(probVector)
+        coord = id2Coord(pos);
+        if minefield(coord(1),coord(2),2) == -1 && probVector(pos) == 0
+            voidVector = [voidVector, pos];
+        end
+    end
+    
+    %This is the probability of guessing a mine in the "void", i.e not touching a clue
+    voidProbability = length(voidVector)/(mineNum-bombs);
+    
+    %Apply this to the probability vector
+    for j = 1:length(voidVector)
+        probVector(voidVector(j)) = voidProbability;
+    end
+    
+    %We must first replace all 0s by Inf to find the non-zero minimum element
+    probVector(probVector == 0) = Inf;
+    
+    %Pick a cell to guess
+    low = find(probVector == min(probVector));
+    pick = ceil(rand*length(low));
+    cellCoord = id2Coord(low(pick)); 
+    successChance = (1 - min(probVector))*100;
+    
+    %Unmask the guess
+    minefield(cellCoord(1),cellCoord(2),3) = 0;
+    updateMaskedMinefield();
+    
+    fprintf('Guessing at (%2d,%2d)\nSuccess probability: %4.1f%%\n',cellCoord(1),cellCoord(2),successChance);
+    
+    %Check if the guess is a mine (return if true)
+    if minefield(cellCoord(1),cellCoord(2),2) == 9
+        fprintf('Oh no! I guessed wrong!\n');
+        return;
+    elseif bombs == mineNum
+        fprintf('What!?? I won after guessing!\n');
+        return;
+    else
+        %Guess is successful, try to continue solving
+        solveMinefield();
+        guess();
+    end
+end
 
+function addProbability(row, col, probability)
+    %Appends a probability around a cell
+    global minefield minefieldDim
+    global probVector
+    
+    for m=(row-1):(row+1)
+        for n=(col-1):(col+1)
+            %Check bounds
+            if m <= minefieldDim(1) && n <= minefieldDim(2) && m > 0 && n > 0 && ~(m == row && n == col)
+                if minefield(m,n,2) == -1
+                    pos = coord2Id(m,n);
+                    %Replace only with larger probability
+                    if probability > probVector(pos)
+                        probVector(pos) = probability;
+                    end
+                end
+            end
+        end
+    end
+end
 
-
-
-
-
-
-
-
-
-
-
+function probability = calcProbability(row, col)
+    %Calculates the probability of there being a mine around a cell
+    global minefield minefieldDim
+    
+    mineCounter = 0;
+    unknownCounter = 0;
+    
+    %Cycle around to count mines and unknowns
+    for m=(row-1):(row+1)
+        for n=(col-1):(col+1)
+            if m <= minefieldDim(1) && n <= minefieldDim(2) && m > 0 && n > 0
+                if minefield(m,n,2) == 99
+                    mineCounter = mineCounter+1;
+                elseif minefield(m,n,2) == -1
+                    unknownCounter = unknownCounter+1;
+                end
+            end
+        end
+    end
+    
+    %Default probability is zero
+    probability = 0;
+    
+    %Must have unknown around to calculate probability
+    if unknownCounter == 0
+        return;
+    else
+        probability = (double(minefield(row,col,2)) - mineCounter)/unknownCounter;
+    end
+end
 
 

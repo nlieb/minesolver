@@ -12,7 +12,7 @@ function mineSolver
     minefieldDim(2) = 7;
     mineNum = 18;
     
-    initializeFigureWindow(0.2);
+    initializeFigureWindow(1);
     dncInit();
     
     %generate the minefield into global variable "minefield"
@@ -184,7 +184,8 @@ end
 
 %Check to see if any squares can be solved outright
 function counter = clearPass()
-    global minefield minefieldDim
+    global minefield minefieldDim 
+    global grain solvedArray
 
     isUpdated = true;
     counter = 0;
