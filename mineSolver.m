@@ -8,9 +8,9 @@ function mineSolver
     global equationMatrix equationMatrixDim equationMatrixPos
     
     %Set minefield dimensions
-    minefieldDim(1) = 16;
-    minefieldDim(2) = 30;
-    mineNum = 99;
+    minefieldDim(1) = 7;
+    minefieldDim(2) = 7;
+    mineNum = 18;
     
     initializeFigureWindow();
         
@@ -30,6 +30,7 @@ function mineSolver
     equationMatrixPos = 1;
     
     solveMinefield();
+    guess();
 end
 
 %Initialize the figure window with given size, offset and title
@@ -73,7 +74,7 @@ end
 
 % Contains main solving loop.
 function solveMinefield()
-    global minefieldDim mineNum
+    global minefield minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
     global solvedEqMatrix solvedEqMatrixDim
     global bombs equations
@@ -142,6 +143,16 @@ function solveMinefield()
                 
                 %Zero out the equation matrix
                 equationMatrix(:,:) = 0;
+            else
+                %Puzzle is solved, clear all unknowns
+                for i = 1:minefieldDim(1)
+                    for j = 1:minefieldDim(2)
+                        if minefield(i,j,2) == -1
+                            minefield(i,j,3) = 0;
+                        end
+                    end
+                end
+                updateMaskedMinefield();
             end
         end
         
@@ -151,7 +162,7 @@ function solveMinefield()
         fprintf('bombs found: %d\n', bombs);
     end
     
-    fprintf('\n Deterministic solving complete!\n');
+    fprintf('\nDeterministic solving complete!\n\n');
 end
 
 %Check to see if any squares can be solved outright
@@ -480,78 +491,5 @@ function allMatchMethod(i, solverMatrix, sizeS)
     end
 end
 
-function guess()
-    %Guesses the cell with the lowest probability of being a mine
-    global minefield minefieldDim
-    global probMatrix
-    
-    %Create a probability matrix
-    probMatrix = zeros(minefieldDim(1), minefieldDim(2));
-    
-    %Fill the probability matrix
-    for i = 1:minefieldDim(1)
-        for j = 1:minefieldDim(2)
-            if minefield(i,j,2) ~= -1 && minefield(i,j,2) ~= 99
-                probability = calcProbability(i,j);
-                if probability ~= 0
-                    addProbability(i,j,probability)
-                end
-            end
-        end
-    end
-    
-    %Pick a cell to guess
-    low = min(min(probMatrix(probMatrix ~= 0)));
-    
-    for i = 1:minefieldDim(1)
-        for j = 1:minefieldDim(2)
-            
-        end
-    end
-    
-    %Unmask the guess
-    
-    %Check if the guess is a mine (return if true)
-end
-
-function addProbability(row, col, probability)
-    %Appends a probability around a cell
-    global probMatrix
-    
-    for m=(row-1):(row+1)
-        for n=(col-1):(col+1)
-            if probability > probMatrix(m,n)
-                probMatrix(m,n) = probability;
-            end
-        end
-    end
-end
-
-function probability = calcProbability(row, col)
-    %Calculates the probability of there being a mine around a cell
-    global minefield
-    
-    probability = 0;
-    mineCounter = 0;
-    unknownCounter = 0;
-    
-    for m=(row-1):(row+1)
-        for n=(col-1):(col+1)
-            if m <= minefieldDim(1) && n <= minefieldDim(2) && m > 0 && n > 0
-                if minefield(m,n,2) == 99
-                    mineCounter = mineCounter+1;
-                elseif minefield(m,n,2) == -1
-                    unknownCounter = unknownCounter+1;
-                end
-            end
-        end
-    end
-    
-    if unknownCounter == 0
-        return;
-    else
-        probability = (minefield(row,col,2) - mineCounter)/unknownCounter;
-    end
-end
 
 
