@@ -44,7 +44,6 @@ function generateMinefield(m, n, mines)
     
     %Generate the clues
     addClues();
-    
     updateMaskedMinefield();
 end
 
