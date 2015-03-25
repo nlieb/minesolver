@@ -179,6 +179,7 @@ function solveEquations()
     global equationMatrix
     global equations
     global lastBombs
+    global bombs
 
     %Concatonate the solved and equation matrices vertically to set up
     %the row reduction
