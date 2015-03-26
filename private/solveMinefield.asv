@@ -402,7 +402,9 @@ function allMatchMethod(i)
     global solverMatrix sizeS
     global equations bombs
     
-    total = solverMatrix(i,sizeS(2));    
+    total = solverMatrix(i,sizeS(2));
+    counter = 0;
+    
     
     if(total > 0)
         match = 1;
@@ -410,26 +412,31 @@ function allMatchMethod(i)
         match = -1;
     end
     
-    %Look for matches in the solverMatrix
-    matches = find(solverMatrix(i,1:sizeS(2)-1) == match);
+    %Loop through the solverMatrix
+%     for j = 1:sizeS(2)-1
+%         if (solverMatrix(i, j) == match)
+%             counter = counter+1;
+%         end
+%     end
+    matches = find(solverMatrix(i,1:sizeS-1) == match);
+    nMatches = find(solverMatrix(i,1:sizeS-1) ~= 0 
     counter = length(matches);
     
     %Unmask/Mark cells
     if(counter == total)
-        %Look for non-zero non-matches in the solverMatrix
-        nMatches = find(solverMatrix(i,1:sizeS(2)-1) ~= 0 & solverMatrix(i,1:sizeS(2)-1) ~= match);
-
-        for index = 1:counter
-            coord = id2Coord(matches(index));
-            buildSolvedEquation(coord(1),coord(2)); %Build an equation for the mine
-            bombs = bombs+1;
-        end
-        for index = 1:length(nMatches)
-            coord = id2Coord(nMatches(index));
-            equations = equations + 1;
-            minefield(coord(1),coord(2),3) = 0; %Unmask the cell
+%         for j = 1:sizeS(2)-1
+%             if solverMatrix(i, j) == match
+%                 coord = id2Coord(j);
+%                 buildSolvedEquation(coord(1),coord(2));
+%                 bombs = bombs+1;
+%             elseif solverMatrix(i, j) ~= 0
+%                 coord = id2Coord(j);
+%                 equations = equations + 1;
+%                 minefield(coord(1),coord(2),3) = 0; %Unmask the cell
+%             end
+%         end
+        for j = 1:counter
+            
         end
     end
 end
-
-

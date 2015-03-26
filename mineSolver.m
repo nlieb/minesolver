@@ -9,17 +9,17 @@ function mineSolver
     
     %Set minefield dimensions
     minefieldDim(1) = 16;
-    minefieldDim(2) = 30;
-    mineNum = 99;
+    minefieldDim(2) = 16;
+    mineNum = 55;
     
     initializeFigureWindow(1);
     dncInit();
     
     %generate the minefield into global variable "minefield"
-    generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
+    %generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
     
-    save('field.mat');
-    %load('field.mat');
+    %save('field.mat');
+    load('field.mat');
     
     % Get total number of cells
     cellNum = minefieldDim(1)*minefieldDim(2);
@@ -102,3 +102,5 @@ function initializeFigureWindow(multiplier)
     axis([0, minefieldDim(2)*35, 0, minefieldDim(1)*35]);
     axis('off');
 end
+
+

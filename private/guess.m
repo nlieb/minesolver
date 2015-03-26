@@ -44,8 +44,9 @@ function success = guess()
     
     %Pick a cell to guess
     low = find(probVector == min(probVector));
-    pick = ceil(rand*length(low));
-    cellCoord = id2Coord(low(pick)); 
+%     pick = ceil(rand*length(low));
+%     cellCoord = id2Coord(low(pick)); 
+    cellCoord = id2Coord(low(1));
     successChance = (1 - min(probVector))*100;
     
     fprintf('Guessing at (%2d,%2d)\nSuccess probability: %4.1f%%\n',cellCoord(1),cellCoord(2),successChance);
