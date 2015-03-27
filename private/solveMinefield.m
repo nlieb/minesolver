@@ -13,26 +13,25 @@ function solveMinefield()
     %changes have been made)
     equations = 1;
     lastPassBombs = -1;
-    bombs = 0;
+    initialBombs = bombs;
     
     dispMinefield();
-    
-    %Run a first pass of the minefield with the basic expansion algorithm
-    clearPass();
-    dispMinefield();
+%     clearPass();
+%     dispMinefield();
 	
     while (equations > 0 || lastPassBombs ~= bombs)
         %Reset solved checks
         lastPassBombs = bombs;
-        bombs = 0;
+        bombs = initialBombs;
         equations = 0;
         equationMatrixPos = 1;
         
+        %Run a first pass of the minefield with the basic expansion algorithm
         if(clearPass() ~= 0)
             equations = equations+1;
         end
         
-        %Build the equationMatrix
+        %Build the equationMatrix      
         for m = 1:minefieldDim(1)
             for n = 1:minefieldDim(2)
                 getEquationBuilder(m,n);
@@ -40,7 +39,7 @@ function solveMinefield()
         end
         
         %Solve and parse the equationMatrix and SolvedEqMatrix
-        solveEquations();
+        solveEquations(lastPassBombs, initialBombs);
         
         %Implement solved changes to unmask minefield
         updateMaskedMinefield();
@@ -52,20 +51,9 @@ function solveMinefield()
         if (equations == 0 && lastPassBombs == bombs)
             if(bombs ~= mineNum)
                 fprintf('Running mine counting method:\n');
-                bombsLeft = bombs;
-                equationMatrixPos = 1;
-                bombs = 0;
                 
-                mineCountingMethod(bombsLeft);
-                
-                %Build the equationMatrix
-                for m = 1:minefieldDim(1)
-                    for n = 1:minefieldDim(2)
-                        getEquationBuilder(m,n);
-                    end
-                end
+                mineCountingMethod(lastPassBombs, initialBombs);
         
-                solveEquations();
                 updateMaskedMinefield();
                 
                 %Zero out the equation matrix
@@ -173,42 +161,46 @@ function simpleSolve(row, col)
 end
 
 %Builds then solves the solver matrix
-function solveEquations()
+function solveEquations(lastBombs, initialBombs)
     global mineNum
     global solvedEqMatrix equationMatrix
     global solverMatrix sizeS
     global equations bombs
-    global lastBombs
 
     %Concatonate the solved and equation matrices vertically to set up
     %the row reduction
     solverMatrix = vertcat(solvedEqMatrix, equationMatrix);
     sizeS = size(solverMatrix);
     
-    %displayEquations(solverMatrix, size(solverMatrix));
+    %dispEquations();
 
     %Row reduce the matrix (i.e solve it)
     solverMatrix = frref(solverMatrix);
 
-    %displayEquations(solverMatrix, size(solverMatrix));
+    %dispEquations();
     
     %Parse equation Matrix for solved rows
     parseEquations();
     
     iteration = 0;
     
-    bombs = minesSolved();
-    
-    while equations == 0 && bombs == lastBombs && iteration < 5 && (bombs ~= mineNum)
+    while equations == 0 && bombs == lastBombs && iteration < 10 && bombs ~= mineNum
         equations = 0;
-        bombs = 0;
+        bombs = initialBombs;
         iteration = iteration + 1;
         
-        %Permute the solvermatrix
-        permVector = [randperm(sizeS(2)-1), sizeS(2)];
+        if iteration == 1
+            permVector = 1:sizeS(2);
+            %Create and store the permuted matrix
+            permMatrix = zeros(sizeS(1),sizeS(2));
+        end
         
-        %Create and store the permuted matrix
-        permMatrix = zeros(sizeS(1),sizeS(2));
+        %Permute the columns of the solvermatrix
+        if(mod(iteration,2) ~= 0)
+           permVector = [permVector(sizeS(2)-1:-1:1),sizeS(2)];%flip the permute vector
+        else
+           permVector = [randperm(sizeS(2)-1), sizeS(2)];%randomly permute the columns
+        end
 
         for j = 1:sizeS(2)
             permMatrix(:,j) = solverMatrix(:,permVector(j));
@@ -222,30 +214,32 @@ function solveEquations()
             solverMatrix(:,permVector(j)) = permMatrix(:,j);
         end
         
+        %dispEquations();
+        
         %Parse the solverMatrix
         parseEquations();
     end
     
-    lastBombs = minesSolved();
+    if(iteration>0)
+        fprintf('permuted %d times\n', iteration);
+    end
 end
 
 %Parse the solverMatrix for solved rows
 function parseEquations()
-    %Parse equation Matrix for solved rows
     global solverMatrix sizeS
     
     for i = 1:sizeS(1)
 
-        %special case when all variables don't have mines, we are
+        %case when all variables don't have mines, we are
         %looking for equations of the form 1...1...|0 or -1...-1...|0
         if(solverMatrix(i, sizeS(2)) == 0)
             allClearMethod(i);
             continue; %skips the other cases below
         end
         
-        %special case when terminator isn't 0, we are
+        %case when terminator isn't 0, we are
         %looking for equations of the form 1...1...|2 or -1...-1...-1|-3 etc.
-        
         if(abs(solverMatrix(i, sizeS(2))) ~= 0)
             allMatchMethod(i);
         end
@@ -324,10 +318,15 @@ function buildEquation(row, col)
 end
 
 %Solves minefield with added equation where all unknowns = mines left
-function mineCountingMethod(bombsLeft)
+function mineCountingMethod(lastPassBombs, initialBombs)
     global minefield minefieldDim mineNum
     global equationMatrix equationMatrixPos equationMatrixDim
+    global bombs
     
+    bombsLeft = mineNum - bombs;
+    equationMatrixPos = 1;
+    bombs = initialBombs;
+                
     for m = 1:minefieldDim(1)
         for n = 1:minefieldDim(2)
             %Check bounds and if it is an unknown or mine
@@ -341,6 +340,16 @@ function mineCountingMethod(bombsLeft)
     %The final value is equal to the number of mines not yet found
     equationMatrix(equationMatrixPos, equationMatrixDim(2)) = mineNum - bombsLeft;
     equationMatrixPos = equationMatrixPos+1;
+    
+    %Build the equationMatrix
+    for m = 1:minefieldDim(1)
+        for n = 1:minefieldDim(2)
+            getEquationBuilder(m,n);
+        end
+    end
+    
+    solveEquations(lastPassBombs, initialBombs);
+    fprintf('Bombs found after mineCounter: %2d\n', bombs);
 end
 
 %special case when all variables don't have mines, we are looking for equations of the form 1...1...|0 or -1...-1...|0

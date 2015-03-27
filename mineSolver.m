@@ -6,11 +6,12 @@ function mineSolver
     
     global minefield minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
+    global bombs
     
     %Set minefield dimensions
-    minefieldDim(1) = 16;
-    minefieldDim(2) = 16;
-    mineNum = 55;
+    minefieldDim(1) = 7;
+    minefieldDim(2) = 7;
+    mineNum = 20;
     
     initializeFigureWindow(1);
     dncInit();
@@ -30,6 +31,7 @@ function mineSolver
     equationMatrixDim = size(equationMatrix);
     equationMatrixPos = 1;
     
+    bombs = 0;
     solveMinefield();
     bombsSolved = minesSolved();
     
@@ -59,7 +61,7 @@ function dncInit()
     saM = ceil(minefieldDim(1)/grain);
     saN = ceil(minefieldDim(2)/grain);
     
-    %solvedArray is the solved array which represents each 8*8 block as a flag
+    %solvedArray is the solved array which represents each 3*3 block as a flag
     %denoting whether the block is solved or not.
     solvedArray = zeros(saM, saN);
 end
