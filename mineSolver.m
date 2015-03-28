@@ -6,7 +6,6 @@ function mineSolver
     
     global minefield minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
-    global bombs
     
     %Set minefield dimensions
     minefieldDim(1) = 7;
@@ -22,6 +21,9 @@ function mineSolver
     %save('field.mat');
     load('field.mat');
     
+    %Initially display the minefield
+    dispMinefield();
+    
     % Get total number of cells
     cellNum = minefieldDim(1)*minefieldDim(2);
     
@@ -31,7 +33,6 @@ function mineSolver
     equationMatrixDim = size(equationMatrix);
     equationMatrixPos = 1;
     
-    bombs = 0;
     solveMinefield();
     bombsSolved = minesSolved();
     
@@ -41,6 +42,7 @@ function mineSolver
         if ~success
             break;
         else
+            fprintf('Guess was successful!!\n\n');
             solveMinefield();
             bombsSolved = minesSolved();
         end
