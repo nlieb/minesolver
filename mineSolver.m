@@ -8,9 +8,9 @@ function mineSolver
     global equationMatrix equationMatrixDim equationMatrixPos
     
     %Set minefield dimensions
-    minefieldDim(1) = 7;
-    minefieldDim(2) = 7;
-    mineNum = 20;
+    minefieldDim(1) = 16;
+    minefieldDim(2) = 30;
+    mineNum = 99;
     
     initializeFigureWindow(1);
     dncInit();
@@ -37,16 +37,16 @@ function mineSolver
     bombsSolved = minesSolved();
     
     %Start the guessing loop
-    while bombsSolved ~= mineNum
-        success = guess();
-        if ~success
-            break;
-        else
-            fprintf('Guess was successful!!\n\n');
-            solveMinefield();
-            bombsSolved = minesSolved();
-        end
-    end
+%     while bombsSolved ~= mineNum
+%         success = guess();
+%         if ~success
+%             break;
+%         else
+%             fprintf('Guess was successful!!\n\n');
+%             solveMinefield();
+%             bombsSolved = minesSolved();
+%         end
+%     end
     
     if bombsSolved == mineNum
         fprintf('What!?? I won!\n');
