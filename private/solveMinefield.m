@@ -1,13 +1,8 @@
 % Contains main solving loop.
 function solveMinefield()
     global minefieldDim mineNum
-    global equationMatrix equationMatrixDim equationMatrixPos
-    global solvedEqMatrix solvedEqMatrixDim
+    global equationMatrix equationMatrixPos
     global bombs equations
-
-    %Create the solved equation matrix
-    solvedEqMatrix = zeros(equationMatrixDim(2),equationMatrixDim(2));
-    solvedEqMatrixDim = size(solvedEqMatrix);
     
     %Initialize variable used to check if the matrix is solved (i.e no
     %changes have been made)

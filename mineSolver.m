@@ -6,6 +6,7 @@ function mineSolver
     
     global minefield minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
+    global solvedEqMatrix solvedEqMatrixDim
     
     %Set minefield dimensions
     minefieldDim(1) = 7;
@@ -16,10 +17,10 @@ function mineSolver
     dncInit();
     
     %generate the minefield into global variable "minefield"
-    %generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
+    generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
     
-    %save('field.mat');
-    load('field.mat');
+    save('field.mat');
+    %load('field.mat');
     
     %Initially display the minefield
     dispMinefield();
@@ -32,6 +33,10 @@ function mineSolver
     equationMatrix = zeros(1,cellNum+1);
     equationMatrixDim = size(equationMatrix);
     equationMatrixPos = 1;
+    
+    %Create the solved equation matrix
+    solvedEqMatrix = zeros(equationMatrixDim(2),equationMatrixDim(2));
+    solvedEqMatrixDim = size(solvedEqMatrix);
     
     solveMinefield();
     bombsSolved = minesSolved();
