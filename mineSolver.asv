@@ -17,10 +17,10 @@ function mineSolver
     dncInit();
     
     %generate the minefield into global variable "minefield"
-    generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
+    %generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
     
-    save('field.mat');
-    %load('field.mat');
+    %save('field.mat');
+    load('field.mat');
     
     %Initially display the minefield
     dispMinefield();

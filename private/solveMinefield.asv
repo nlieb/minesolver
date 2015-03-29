@@ -1,7 +1,8 @@
 % Contains main solving loop.
 function solveMinefield()
     global minefieldDim mineNum
-    global equationMatrix equationMatrixPos
+    global equationMatrix equationMatrixDim equationMatrixPos
+    global solvedEqMatrix solvedEqMatrixDim
     global bombs equations
     
     %Initialize variable used to check if the matrix is solved (i.e no
@@ -164,7 +165,7 @@ function solveEquations(lastBombs)
     %dispEquations();
 
     %Row reduce the matrix (i.e solve it)
-    solverMatrix = frref(solverMatrix);
+    solverMatrix = frref(solverMatrix, 0, 's');
     %Round the results to prevent rounding errors
     solverMatrix = round(solverMatrix);
     
@@ -198,7 +199,7 @@ function solveEquations(lastBombs)
         end
         
         %rref the matrix
-        permMatrix = frref(permMatrix);
+        permMatrix = frref(permMatrix, 0, 's');
         %Round the results to prevent rounding errors
         permMatrix = round(permMatrix);
         
