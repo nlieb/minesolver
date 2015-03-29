@@ -54,9 +54,6 @@ function solveMinefield()
                 
                 %Zero out the equation matrix
                 equationMatrix(:,:) = 0;
-            else
-                %Puzzle is solved, clear all unknowns
-                clearAllUnknowns();
             end
         end
         
@@ -175,7 +172,7 @@ function solveEquations(lastBombs)
     %Round the results to prevent rounding errors
     solverMatrix = round(solverMatrix);
     
-    %dispEquations();
+    dispEquations();
     
     %Parse equation Matrix for solved rows
     parseEquations();
@@ -233,15 +230,20 @@ function parseEquations()
         
         %case when all variables don't have mines, we are
         %looking for equations of the form 1...1...|0 or -1...-1...|0
-        if(solverMatrix(i, sizeS(2)) == 0)
+        if solverMatrix(i, sizeS(2)) == 0
             allClearMethod(i);
             continue; %skips the other cases below
         end
         
         %case when terminator isn't 0, we are
-        %looking for equations of the form 1...1...|2 or -1...-1...-1|-3 etc.
-        if(abs(solverMatrix(i, sizeS(2))) ~= 0)
-            allMatchMethod(i);
+        %looking for equations of the form 1...1...|2 or -1...-2...|-3 etc.
+        if abs(solverMatrix(i, sizeS(2))) ~= 0
+            %Checks if there are any coefficients not equal to 0, 1, or -1
+%             if ~isempty(find(solverMatrix(i,1:sizeS(2)-1) > 1 | solverMatrix(i,1:sizeS(2)-1) < -1, 1))
+%                 someMultiMethod(i);
+%             else
+                allMatchMethod(i);
+%             end
         end
     end
 end
@@ -322,10 +324,19 @@ function mineCountingMethod(lastPassBombs)
     global minefield minefieldDim mineNum
     global equationMatrix equationMatrixPos equationMatrixDim
     global bombs
+    global solverMatrix sizeS solvedEqMatrix
     
+    bombsLeft = mineNum - bombs;
     bombs = 0;
     equationMatrixPos = 1;
                 
+    %Build the equationMatrix
+    for m = 1:minefieldDim(1)
+        for n = 1:minefieldDim(2)
+            getEquationBuilder(m,n);
+        end
+    end
+    
     for m = 1:minefieldDim(1)
         for n = 1:minefieldDim(2)
             %Check if it is an unknown
@@ -337,19 +348,15 @@ function mineCountingMethod(lastPassBombs)
     end
     
     %The final value is equal to the number of mines not yet found
-    equationMatrix(equationMatrixPos, equationMatrixDim(2)) = mineNum - bombsLeft;
+    equationMatrix(equationMatrixPos, equationMatrixDim(2)) = bombsLeft;
     equationMatrixPos = equationMatrixPos+1;
     
-    %Build the equationMatrix
-    for m = 1:minefieldDim(1)
-        for n = 1:minefieldDim(2)
-            getEquationBuilder(m,n);
-        end
-    end
+%     solverMatrix = vertcat(solvedEqMatrix, equationMatrix);
+%     sizeS = size(solverMatrix);
     
+    dispEquations();
     solveEquations(lastPassBombs);
-    
-    fprintf('Bombs found after mineCounter: %2d\n', bombs);
+    dispEquations();
 end
 
 %special case when all variables don't have mines, we are looking for equations of the form 1...1...|0 or -1...-1...|0
@@ -414,24 +421,30 @@ function allMatchMethod(i)
     total = solverMatrix(i,sizeS(2));    
     
     if(total > 0)
-        match = 1;
+%         match = 1;
+        matches = find(solverMatrix(i,1:sizeS(2)-1) > 0);
     else
-        match = -1;
+%         match = -1;
+        matches = find(solverMatrix(i,1:sizeS(2)-1) < 0);
     end
     
     %Look for matches in the solverMatrix
-    matches = find(solverMatrix(i,1:sizeS(2)-1) == match);
-    counter = length(matches);
+%     matches = find(solverMatrix(i,1:sizeS(2)-1) == match);
+%     counter = length(matches);
+    
+    %Add up the sum of the matches
+    
     
     %Unmask/Mark cells
     if(counter == total)
         %Look for non-zero non-matches in the solverMatrix
+%         nMatches = find(solverMatrix(i,1:sizeS(2)-1) ~= 0 & solverMatrix(i,1:sizeS(2)-1) ~= match);
         nMatches = find(solverMatrix(i,1:sizeS(2)-1) ~= 0 & solverMatrix(i,1:sizeS(2)-1) ~= match);
-
+        
         for index = 1:counter
             coord = id2Coord(matches(index));
             buildSolvedEquation(coord(1),coord(2)); %Build an equation for the mine
-            %bombs = bombs+1;
+            bombs = bombs+1;
         end
         for index = 1:length(nMatches)
             coord = id2Coord(nMatches(index));
@@ -441,4 +454,36 @@ function allMatchMethod(i)
     end
 end
 
-
+%A more rigorous parsing procedure that can handle coefficients of more than one
+% function someMultiMethod(i)
+%     global minefield
+%     global solverMatrix sizeS
+%     global equations bombs
+%     
+%     total = solverMatrix(i,sizeS(2)); 
+%     
+%     if(total > 0)
+%         %Look for positive coefficients in the vector
+%         pos = find(
+%     else
+%         %Look for negative coefficients in the vector
+%         
+%     end
+%     
+%     %Unmask/Mark cells
+%     if(counter == total)
+%         %Look for non-zero non-matches in the solverMatrix
+%         nMatches = find(solverMatrix(i,1:sizeS(2)-1) ~= 0 & solverMatrix(i,1:sizeS(2)-1) ~= match);
+% 
+%         for index = 1:counter
+%             coord = id2Coord(matches(index));
+%             buildSolvedEquation(coord(1),coord(2)); %Build an equation for the mine
+%             bombs = bombs+1;
+%         end
+%         for index = 1:length(nMatches)
+%             coord = id2Coord(nMatches(index));
+%             equations = equations + 1;
+%             minefield(coord(1),coord(2),3) = 0; %Unmask the cell
+%         end
+%     end
+% end
