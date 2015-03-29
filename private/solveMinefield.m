@@ -171,7 +171,7 @@ function solveEquations(lastBombs)
     %dispEquations();
 
     %Row reduce the matrix (i.e solve it)
-    solverMatrix = frref(solverMatrix, 0, 's');
+    solverMatrix = frref(solverMatrix);
     %Round the results to prevent rounding errors
     solverMatrix = round(solverMatrix);
     
@@ -205,7 +205,7 @@ function solveEquations(lastBombs)
         end
         
         %rref the matrix
-        permMatrix = frref(permMatrix, 0, 's');
+        permMatrix = frref(permMatrix);
         %Round the results to prevent rounding errors
         permMatrix = round(permMatrix);
         

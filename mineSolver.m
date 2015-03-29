@@ -9,8 +9,8 @@ function mineSolver
     
     %Set minefield dimensions
     minefieldDim(1) = 16;
-    minefieldDim(2) = 30;
-    mineNum = 99;
+    minefieldDim(2) = 16;
+    mineNum = 65;
     
     initializeFigureWindow(1);
     dncInit();
