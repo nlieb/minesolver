@@ -45,18 +45,17 @@ function mineSolver
     
     maxPermutations = 1;
     %Start the guessing loop
-    if strcmpi(settings{4}(1), 'Y')
-        while bombsSolved ~= mineNum
-            success = guess();
-            if ~success
-                break;
-            else
-                fprintf('Guess was successful!!\n\n');
-                solveMinefield();
-                bombsSolved = minesSolved();
-            end
+    while bombsSolved ~= mineNum
+        success = guess();
+        if ~success
+            break;
+        else
+            fprintf('Guess was successful!!\n\n');
+            solveMinefield();
+            bombsSolved = minesSolved();
         end
     end
+
     
     if bombsSolved == mineNum
         fprintf('What!?? I won!\n');
@@ -118,20 +117,20 @@ function initializeFigureWindow(multiplier)
 end
 
 function settings = getSettings()
+
+    load('lastSettings', 'settings');
     
     %Set the defaults to the last settings if they exist
-    if exist('lastSettings.mat', 'file')
-        load('lastSettings', 'settings');
-        defaults = {settings{1}, settings{2}, settings{3}, settings{4}};
+    if logical(exist('settings', 'var')) && size(settings,1) == 1 && size(settings,2) == 3
+        defaults = {settings{1}, settings{2}, settings{3}};
     else
-        defaults = {'16', '30', '99', 'Yes'};
+        defaults = {'16', '30', '99'};
     end
     
     %Set up the prompt for the menu
     prompt = {'Enter the desired number of rows:', ...
               'Enter the desired number of columns:', ...
-              'Enter the desired number of mines:', ...
-              'Guessing enabled? Enter "Yes" or "No"'};
+              'Enter the desired number of mines:'};
           
     %Set the title      
     title = 'Settings';
