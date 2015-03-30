@@ -120,12 +120,12 @@ end
 function settings = getSettings()
     
     %Set the defaults to the last settings if they exist
-    if exist('lastSettings.mat', 'file')
-        load('lastSettings', 'settings');
-        defaults = {settings{1}, settings{2}, settings{3}, settings{4}};
-    else
+    %if exist('lastSettings.mat', 'file')
+    %    load('lastSettings', 'settings');
+    %    defaults = {settings{1}, settings{2}, settings{3}, settings{4}};
+    %else
         defaults = {'16', '30', '99', 'Yes'};
-    end
+    %end
     
     %Set up the prompt for the menu
     prompt = {'Enter the desired number of rows:', ...

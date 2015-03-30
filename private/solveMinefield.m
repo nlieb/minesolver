@@ -3,6 +3,7 @@ function solveMinefield()
     global minefieldDim mineNum
     global equationMatrix equationMatrixPos
     global bombs equations
+    global grain solvedArray
     
     %Initialize variable used to check if the matrix is solved (i.e no
     %changes have been made)
@@ -22,9 +23,15 @@ function solveMinefield()
             equations = equations+1;
         end
         
-        %Build the equationMatrix      
+        %Build the equationMatrix
         for m = 1:minefieldDim(1)
-            for n = 1:minefieldDim(2)
+            n = 0;
+            while(n < minefieldDim(2))
+                n = n+1;
+                if(mod(n-1, grain) == 0 && solvedArray(ceil(m/grain),ceil(n/grain)))%dnc optimization
+                    n = n+grain;%skip to next block
+                    continue;
+                end
                 getEquationBuilder(m,n);
             end
         end
@@ -80,7 +87,7 @@ function counter = clearPass()
         
         for m = 1:minefieldDim(1)
             n = 1;
-            while n <= minefieldDim(2)
+            while n < minefieldDim(2)
                 if(mod(n-1, grain) == 0 && solvedArray(ceil(m/grain),ceil(n/grain)))%dnc optimization
                     n = n+grain;%skip to next block
                     continue;
@@ -294,6 +301,7 @@ function mineCountingMethod(lastPassBombs)
     global minefield minefieldDim mineNum
     global equationMatrix equationMatrixPos equationMatrixDim
     global bombs
+    global grain solvedArray
     
     bombsLeft = mineNum - minesSolved();
     bombs = 0;
@@ -301,7 +309,13 @@ function mineCountingMethod(lastPassBombs)
                 
     %Build the equationMatrix
     for m = 1:minefieldDim(1)
-        for n = 1:minefieldDim(2)
+        n = 0;
+        while(n < minefieldDim(2))
+            n = n+1;
+            if(mod(n-1, grain) == 0 && solvedArray(ceil(m/grain),ceil(n/grain)))%dnc optimization
+                n = n+grain;%skip to next block
+                continue;
+            end
             getEquationBuilder(m,n);
         end
     end
