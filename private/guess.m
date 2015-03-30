@@ -3,7 +3,8 @@ function success = guess()
     global minefield minefieldDim mineNum
     global probVector
     
-    fprintf('Initiating probability calculations...\n');
+    %fprintf('Initiating probability calculations...\n');
+    fprintf('\n');
     
     %Find the number of bombs solved
     bombsSolved = minesSolved();
@@ -49,7 +50,7 @@ function success = guess()
     cellCoord = id2Coord(low(1));
     successChance = (1 - min(probVector))*100;
     
-    fprintf('Guessing at (%2d,%2d)\nSuccess probability: %4.1f%%\n',cellCoord(1),cellCoord(2),successChance);
+    fprintf('guessing at (%2d,%2d), success probability %4.1f%%\n',cellCoord(1),cellCoord(2),successChance);
     
     %Unmask the guess
     minefield(cellCoord(1),cellCoord(2),3) = 0;

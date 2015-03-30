@@ -9,9 +9,9 @@ function mineSolver
     global solvedEqMatrix solvedEqMatrixDim
     
     %Set minefield dimensions
-    minefieldDim(1) = 7;
-    minefieldDim(2) = 7;
-    mineNum = 20;
+    minefieldDim(1) = 16;
+    minefieldDim(2) = 30;
+    mineNum = 99;
     
     initializeFigureWindow(1);
     dncInit();

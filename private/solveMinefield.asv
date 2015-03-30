@@ -324,35 +324,14 @@ function mineCountingMethod(lastPassBombs)
     %dispEquations();
 end
 
-%Parse the solverMatrix for solved rows
-%calls the two methods, allClearMethod, and allMatchMethod
-function parseEquations()
-    global solverMatrix sizeS 
-    global equations
-    
-    for i = 1:sizeS(1)
-        %case when all variables don't have mines, we are
-        %looking for equations of the form 1...1...|0 or -1...-1...|0
-        if solverMatrix(i, sizeS(2)) == 0
-            equations = equations + allClearMethod(i);
-            continue; %skips the other cases below
-        end
-        
-        %case when terminator isn't 0, we are
-        %looking for equations of the form 1...1...|2 or -1...-2...|-3 etc.
-        if abs(solverMatrix(i, sizeS(2))) ~= 0
-            allMatchMethod(i);
-        end
-    end
-end
-
-%special case when all variables don't have mines, we are looking for equations of the form 1...1...|0 or -1...-1...|0
-function equations = allClearMethod(i)
+%special case when all variables don't have mines, 
+%we are looking for equations of the form 1...1...|0 or -1...-1...|0
+function bombsFound = allClearMethod(i)
     global minefield
     global solverMatrix sizeS
     
     j = 1;
-    equations = 0;
+    bombsFound = 0;
     
     %Loop through until you find a non-zero term
     while(j < sizeS(2) && solverMatrix(i, j) == 0)
@@ -375,17 +354,17 @@ function equations = allClearMethod(i)
         coord = id2Coord(solved(k));
         minefield(coord(1),coord(2),3) = 0; 
     end
-    equations = equations + length(solved);
     
-    return 
+    bombsFound = bombsFound + length(solved);
 end
 
 %Checks and solves equations of the form 1...1...|2 or 1...1...1|3 etc.
-function allMatchMethod(i)
+function bombsFound = allMatchMethod(i)
     global minefield
     global solverMatrix sizeS
-    global equations bombs
+    global bombs
     
+    bombsFound = 0;
     total = solverMatrix(i,sizeS(2));    
     
     if(total > 0)
@@ -415,7 +394,7 @@ function allMatchMethod(i)
         end
         for index = 1:length(nMatches)
             coord = id2Coord(nMatches(index));
-            equations = equations + 1;
+            bombsFound = bombsFound + 1;
             minefield(coord(1),coord(2),3) = 0; %Unmask the cell
         end
     end
