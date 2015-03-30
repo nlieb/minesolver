@@ -154,6 +154,7 @@ function solveEquations(lastBombs)
     global solvedEqMatrix equationMatrix
     global solverMatrix sizeS
     global equations bombs
+    global maxPermutations
 
     %Concatonate the solved and equation matrices vertically to set up
     %the row reduction
@@ -174,7 +175,7 @@ function solveEquations(lastBombs)
     
     iteration = 0;
     
-    while equations == 0 && bombs == lastBombs && iteration < 10 && bombs ~= mineNum
+    while equations == 0 && bombs == lastBombs && iteration < maxPermutations && bombs ~= mineNum
         equations = 0;
         bombs = 0;
         iteration = iteration + 1;

@@ -23,6 +23,9 @@ function mineSolver
     %generate the minefield into global variable "minefield"
     generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
     
+    save('field.mat');
+    %load('field.mat');
+    
     %Initially display the minefield
     dispMinefield();
     
@@ -129,8 +132,8 @@ function settings = getSettings()
     
     %Set up the prompt for the menu
     prompt = {'Enter the desired number of rows:', ...
-              'Enter the desired number of columns:', ...
-              'Enter the desired number of mines:', ...
+              'Enter the desired number of columns:' ...
+              'Enter the desired number of mines:'...
               'Guessing enabled? Enter "Yes" or "No"'};
           
     %Set the title      
@@ -138,7 +141,13 @@ function settings = getSettings()
     
     %Get the settings
     settings = inputdlg(prompt, title, 1, defaults);
+    
+    %Check if the input is valid
+    if ~isstrprop(settings{1}, 'digit') || ~isstrprop(settings{2}, 'digit') ...
+       || ~isstrprop(settings{3}, 'digit')
             
+        
+    
     %Save those settings as the last known settings
     save('lastSettings', 'settings');
 end
