@@ -4,23 +4,24 @@ function mineSolver
     
     addpath('lib/', 'img/');
     
-    global minefield minefieldDim mineNum
+    global minefieldDim mineNum
     global equationMatrix equationMatrixDim equationMatrixPos
     global solvedEqMatrix solvedEqMatrixDim
+    global maxPermutations
+    
+    %Create menu to set minefield dimensions and settings
+    settings = getSettings();
     
     %Set minefield dimensions
-    minefieldDim(1) = 9;
-    minefieldDim(2) = 9;
-    mineNum = 23;
+    minefieldDim(1) = str2double(settings{1});
+    minefieldDim(2) = str2double(settings{2});
+    mineNum = str2double(settings{3});
     
     initializeFigureWindow(1);
     dncInit();
     
     %generate the minefield into global variable "minefield"
     generateMinefield(minefieldDim(1), minefieldDim(2), mineNum);
-    
-    save('field.mat');
-    %load('field.mat');
     
     %Initially display the minefield
     dispMinefield();
@@ -38,9 +39,11 @@ function mineSolver
     solvedEqMatrix = zeros(equationMatrixDim(2),equationMatrixDim(2));
     solvedEqMatrixDim = size(solvedEqMatrix);
     
+    maxPermutations = 10;
     solveMinefield();
     bombsSolved = minesSolved();
     
+    maxPermutations = 1;
     %Start the guessing loop
     while bombsSolved ~= mineNum
         success = guess();
@@ -112,4 +115,28 @@ function initializeFigureWindow(multiplier)
     axis('off');
 end
 
+function settings = getSettings()
 
+    load('lastSettings', 'settings');
+    
+    %Set the defaults to the last settings if they exist
+    if logical(exist('settings', 'var')) && size(settings,1) == 1 && size(settings,2) == 3
+        defaults = {settings{1}, settings{2}, settings{3}};
+    else
+        defaults = {'16', '30', '99'};
+    end
+    
+    %Set up the prompt for the menu
+    prompt = {'Enter the desired number of rows:', ...
+              'Enter the desired number of columns:', ...
+              'Enter the desired number of mines:'};
+          
+    %Set the title      
+    title = 'Settings';
+    
+    %Get the settings
+    settings = inputdlg(prompt, title, 1, defaults);
+            
+    %Save those settings as the last known settings
+    save('lastSettings', 'settings');
+end

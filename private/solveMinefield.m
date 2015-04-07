@@ -3,6 +3,7 @@ function solveMinefield()
     global minefieldDim mineNum
     global equationMatrix equationMatrixPos
     global bombs equations
+    global grain solvedArray
     
     %Initialize variable used to check if the matrix is solved (i.e no
     %changes have been made)
@@ -22,9 +23,15 @@ function solveMinefield()
             equations = equations+1;
         end
         
-        %Build the equationMatrix      
+        %Build the equationMatrix
         for m = 1:minefieldDim(1)
-            for n = 1:minefieldDim(2)
+            n = 0;
+            while(n < minefieldDim(2))
+                n = n+1;
+                if(mod(n-1, grain) == 0 && solvedArray(ceil(m/grain),ceil(n/grain)))%dnc optimization
+                    n = n+grain;%skip to next block
+                    continue;
+                end
                 getEquationBuilder(m,n);
             end
         end
@@ -41,10 +48,9 @@ function solveMinefield()
         %Run mine counter if nothing was solved yet
         if (equations == 0 && lastPassBombs == bombs)
             if(bombs ~= mineNum)
-                fprintf('Running mine counting method:\n');
+                fprintf('running mine counting method\n');
                 
                 mineCountingMethod(lastPassBombs);
-        
                 updateMaskedMinefield();
                 
                 %Zero out the equation matrix
@@ -59,7 +65,7 @@ function solveMinefield()
         fprintf('bombs found: %d\n', bombs);
     end
     
-    fprintf('\nDeterministic solving complete!\n\n');
+    %fprintf('\nDeterministic solving complete!\n\n');
 end
 
 %Check to see if any squares can be solved outright
@@ -81,7 +87,7 @@ function counter = clearPass()
         
         for m = 1:minefieldDim(1)
             n = 1;
-            while n <= minefieldDim(2)
+            while n < minefieldDim(2)
                 if(mod(n-1, grain) == 0 && solvedArray(ceil(m/grain),ceil(n/grain)))%dnc optimization
                     n = n+grain;%skip to next block
                     continue;
@@ -155,6 +161,7 @@ function solveEquations(lastBombs)
     global solvedEqMatrix equationMatrix
     global solverMatrix sizeS
     global equations bombs
+    global maxPermutations
 
     %Concatonate the solved and equation matrices vertically to set up
     %the row reduction
@@ -175,7 +182,7 @@ function solveEquations(lastBombs)
     
     iteration = 0;
     
-    while equations == 0 && bombs == lastBombs && iteration < 10 && bombs ~= mineNum
+    while equations == 0 && bombs == lastBombs && iteration < maxPermutations && bombs ~= mineNum
         equations = 0;
         bombs = 0;
         iteration = iteration + 1;
@@ -215,27 +222,6 @@ function solveEquations(lastBombs)
     
     if(iteration>0)
         fprintf('permuted %d times\n', iteration);
-    end
-end
-
-%Parse the solverMatrix for solved rows
-function parseEquations()
-    global solverMatrix sizeS
-    
-    for i = 1:sizeS(1)
-        
-        %case when all variables don't have mines, we are
-        %looking for equations of the form 1...1...|0 or -1...-1...|0
-        if solverMatrix(i, sizeS(2)) == 0
-            allClearMethod(i);
-            continue; %skips the other cases below
-        end
-        
-        %case when terminator isn't 0, we are
-        %looking for equations of the form 1...1...|2 or -1...-2...|-3 etc.
-        if abs(solverMatrix(i, sizeS(2))) ~= 0
-                allMatchMethod(i);
-        end
     end
 end
 
@@ -315,6 +301,7 @@ function mineCountingMethod(lastPassBombs)
     global minefield minefieldDim mineNum
     global equationMatrix equationMatrixPos equationMatrixDim
     global bombs
+    global grain solvedArray
     
     bombsLeft = mineNum - minesSolved();
     bombs = 0;
@@ -322,7 +309,13 @@ function mineCountingMethod(lastPassBombs)
                 
     %Build the equationMatrix
     for m = 1:minefieldDim(1)
-        for n = 1:minefieldDim(2)
+        n = 0;
+        while(n < minefieldDim(2))
+            n = n+1;
+            if(mod(n-1, grain) == 0 && solvedArray(ceil(m/grain),ceil(n/grain)))%dnc optimization
+                n = n+grain;%skip to next block
+                continue;
+            end
             getEquationBuilder(m,n);
         end
     end
@@ -341,60 +334,65 @@ function mineCountingMethod(lastPassBombs)
     equationMatrix(equationMatrixPos, equationMatrixDim(2)) = bombsLeft;
     equationMatrixPos = equationMatrixPos+1;
     
+    %dispEquations();
     solveEquations(lastPassBombs);
+    %dispEquations();
+end
+
+%Parse the solverMatrix for solved rows
+%calls the two methods, allClearMethod, and allMatchMethod
+function parseEquations()
+    global solverMatrix sizeS 
+    global equations
+    
+    for i = 1:sizeS(1)
+        %case when all variables don't have mines, we are
+        %looking for equations of the form 1...1...|0 or -1...-1...|0
+        if solverMatrix(i, sizeS(2)) == 0
+            equations = equations + allClearMethod(i);
+            continue; %skips the other cases below
+        end
+        
+        %case when terminator isn't 0, we are
+        %looking for equations of the form 1...1...|2 or -1...-2...|-3 etc.
+        if abs(solverMatrix(i, sizeS(2))) ~= 0
+            allMatchMethod(i);
+        end
+    end
 end
 
 %special case when all variables don't have mines, we are looking for equations of the form 1...1...|0 or -1...-1...|0
-function exit = allClearMethod(i)
-    global minefield minefieldDim
+function equations = allClearMethod(i)
+    global minefield
     global solverMatrix sizeS
-    global equations
-    
-    solvedSquares = zeros(minefieldDim(1)*minefieldDim(2));
     
     j = 1;
-    exit = false;
-
+    equations = 0;
+    
     %Loop through until you find a non-zero term
     while(j < sizeS(2) && solverMatrix(i, j) == 0)
         j = j + 1;
     end
-
     if j == sizeS(2) %If all terms in that row were zero, exit
-        exit = true;
-    else
-        %Check if all the remaining variables are either 0 or
-        %the same coefficient
-        check = solverMatrix(i, j);
-
-        %Loop through the rest of the array
-        while j < sizeS(2)
-            if solverMatrix(i, j) ~= check && solverMatrix(i, j) ~= 0
-                exit = true;
-                break;
-            end
-            j = j + 1;
-        end
-    end 
-
-    if(~exit)
-        for j = 1:sizeS(2)-1
-            if solverMatrix(i, j) ~= 0
-                solvedSquares(j) = 1;
-
-                %coord = id2Coord(j);
-                %fprintf('(%d, %d): is empty (constant = 0)\n', coord(1), coord(2));
-            end
-        end
-
-        for k = 1:minefieldDim(1)*minefieldDim(2)% unmask special case when all variables are don't have mines
-            if(solvedSquares(k) == 1)
-                coord = id2Coord(k);
-                equations = equations + 1;
-                minefield(coord(1),coord(2),3) = 0; %Unmask the cell
-            end
-        end
+        return;
     end
+    check = solverMatrix(i, j);
+    
+    %Check if all the remaining variables are either 0 or
+    %the same coefficient as the check
+    n = length(find(solverMatrix(i,:) ~= check & solverMatrix(i,:) ~= 0));
+    if n %n must be 0 to satisfy the form.
+        return;
+    end
+    
+    solved = find(solverMatrix(i,:) == check);
+    for k = 1:length(solved)%Unmask the cell
+        coord = id2Coord(solved(k));
+        minefield(coord(1),coord(2),3) = 0; 
+    end
+    equations = equations + length(solved);
+    
+    return 
 end
 
 %Checks and solves equations of the form 1...1...|2 or 1...1...1|3 etc.
