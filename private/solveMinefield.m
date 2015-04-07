@@ -168,7 +168,7 @@ function solveEquations(lastBombs)
     %Round the results to prevent rounding errors
     solverMatrix = round(solverMatrix);
     
-    dispEquations();
+    %dispEquations();
     
     %Parse equation Matrix for solved rows
     parseEquations();
@@ -341,9 +341,7 @@ function mineCountingMethod(lastPassBombs)
     equationMatrix(equationMatrixPos, equationMatrixDim(2)) = bombsLeft;
     equationMatrixPos = equationMatrixPos+1;
     
-    dispEquations();
     solveEquations(lastPassBombs);
-    dispEquations();
 end
 
 %special case when all variables don't have mines, we are looking for equations of the form 1...1...|0 or -1...-1...|0
